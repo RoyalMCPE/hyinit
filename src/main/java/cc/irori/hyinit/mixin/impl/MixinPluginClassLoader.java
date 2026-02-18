@@ -1,16 +1,58 @@
 package cc.irori.hyinit.mixin.impl;
 
+import cc.irori.hyinit.shared.SourceMetaStore;
+import cc.irori.hyinit.shared.SourceMetadata;
+import cc.irori.hyinit.util.LoaderUtil;
+import cc.irori.hyinit.util.UrlUtil;
 import com.hypixel.hytale.server.core.plugin.PluginClassLoader;
+import com.llamalad7.mixinextras.sugar.Local;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.security.CodeSource;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PluginClassLoader.class)
-public class MixinPluginClassLoader {
+public class MixinPluginClassLoader extends URLClassLoader {
+
+    public MixinPluginClassLoader(URL[] urls, ClassLoader parent) {
+        super(urls, parent);
+    }
+
+    // OrbisGuard compatibility:
+    // When the same class is present in both the earlyplugin jar and the mod jar, prioritize the mod's.
+    // To do this, we need to check the SourceMetadata of the loaded class.
+    @Inject(method = "loadClass0", at = @At(value = "RETURN", ordinal = 0), cancellable = true)
+    private void hyinit$prioritizeLocalModClass(
+            String name,
+            boolean useBridge,
+            CallbackInfoReturnable<Class<?>> cir,
+            @Local(name = "loadClass") Class<?> loadClass)
+            throws ClassNotFoundException {
+        String fileName = LoaderUtil.getClassFileName(name);
+        URL url = super.getResource(fileName);
+        if (url != null) {
+            CodeSource codeSource = loadClass.getProtectionDomain().getCodeSource();
+            if (codeSource != null) {
+                SourceMetadata meta = SourceMetaStore.get(UrlUtil.asPath(codeSource.getLocation()));
+                if (meta.isEarlyPlugin()) {
+                    try {
+                        Class<?> pluginClass = super.loadClass(name, false);
+                        if (pluginClass != null) {
+                            cir.setReturnValue(pluginClass);
+                        }
+                    } catch (ClassNotFoundException ignored) {
+                    }
+                }
+            }
+        }
+    }
 
     // Certain plugins may attempt to use getResource to read its manifest file (why),
     // this causes a conflict with HyinitClassLoader that includes manifests of early plugins.

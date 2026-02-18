@@ -3,6 +3,7 @@ package cc.irori.hyinit;
 import cc.irori.hyinit.mixin.HyinitClassLoader;
 import cc.irori.hyinit.mixin.HyinitMixinBootstrap;
 import cc.irori.hyinit.mixin.HyinitMixinService;
+import cc.irori.hyinit.shared.SourceMetadata;
 import cc.irori.hyinit.util.SneakyThrow;
 import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import java.lang.invoke.MethodHandle;
@@ -34,11 +35,16 @@ public final class Main {
         System.out.println("Using server jar: " + serverJar);
 
         HyinitClassLoader classLoader = new HyinitClassLoader();
-        classLoader.addCodeSource(serverJar);
-        classLoader.addCodeSource(Paths.get(
-                Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()));
+        classLoader.addCodeSource(serverJar, new SourceMetadata(false));
+        classLoader.addCodeSource(
+                Paths.get(Main.class
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .toURI()),
+                new SourceMetadata(false));
         for (Path path : collectClasspathJars(serverJar, cwd.resolve("earlyplugins"))) {
-            classLoader.addCodeSource(path);
+            classLoader.addCodeSource(path, new SourceMetadata(true));
         }
 
         HyinitMixinService.setGameClassLoader(classLoader);

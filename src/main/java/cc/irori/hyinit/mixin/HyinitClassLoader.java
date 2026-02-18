@@ -1,10 +1,9 @@
 package cc.irori.hyinit.mixin;
 
 import cc.irori.hyinit.HyinitLogger;
-import cc.irori.hyinit.util.LoaderUtil;
-import cc.irori.hyinit.util.ManifestUtil;
-import cc.irori.hyinit.util.UrlConversionException;
-import cc.irori.hyinit.util.UrlUtil;
+import cc.irori.hyinit.shared.SourceMetaStore;
+import cc.irori.hyinit.shared.SourceMetadata;
+import cc.irori.hyinit.util.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,7 +54,7 @@ public class HyinitClassLoader extends SecureClassLoader {
         return transformer != null;
     }
 
-    public void addCodeSource(Path path) {
+    public void addCodeSource(Path path, SourceMetadata metadata) {
         path = LoaderUtil.normalizeExistingPath(path);
 
         synchronized (this) {
@@ -69,6 +68,7 @@ public class HyinitClassLoader extends SecureClassLoader {
             newCodeSources.add(path);
 
             this.codeSources = newCodeSources;
+            SourceMetaStore.put(path, metadata);
         }
 
         urlLoader.addURL(UrlUtil.asUrl(path));
@@ -127,7 +127,10 @@ public class HyinitClassLoader extends SecureClassLoader {
             Class<?> c = findLoadedClass(name);
 
             if (c == null) {
-                if (name.startsWith("java.")) {
+                if (name.startsWith("cc.irori.hyinit.shared.")
+                        || name.equals(getClass().getName())) {
+                    c = originalLoader.loadClass(name);
+                } else if (name.startsWith("java.")) {
                     c = PLATFORM_CLASS_LOADER.loadClass(name);
                 } else {
                     c = tryLoadClass(name, false);
