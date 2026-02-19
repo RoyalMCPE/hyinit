@@ -27,7 +27,6 @@ spotless {
 
 repositories {
     mavenCentral()
-    maven("https://repo.spongepowered.org/repository/maven-public/")
     maven("https://maven.hytale.com/release")
 }
 
