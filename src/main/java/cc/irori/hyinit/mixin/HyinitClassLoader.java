@@ -1,5 +1,12 @@
 package cc.irori.hyinit.mixin;
 
+import cc.irori.hyinit.HyinitLogger;
+import cc.irori.hyinit.shared.SourceMetaStore;
+import cc.irori.hyinit.shared.SourceMetadata;
+import cc.irori.hyinit.util.LoaderUtil;
+import cc.irori.hyinit.util.ManifestUtil;
+import cc.irori.hyinit.util.UrlConversionException;
+import cc.irori.hyinit.util.UrlUtil;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,17 +32,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.Manifest;
-
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformer;
-
-import cc.irori.hyinit.HyinitLogger;
-import cc.irori.hyinit.shared.SourceMetaStore;
-import cc.irori.hyinit.shared.SourceMetadata;
-import cc.irori.hyinit.util.LoaderUtil;
-import cc.irori.hyinit.util.ManifestUtil;
-import cc.irori.hyinit.util.UrlConversionException;
-import cc.irori.hyinit.util.UrlUtil;
 
 public class HyinitClassLoader extends SecureClassLoader {
 
@@ -335,7 +333,8 @@ public class HyinitClassLoader extends SecureClassLoader {
             byte[] generated = transformer.generateClass(MixinEnvironment.getCurrentEnvironment(), name);
             if (generated != null) {
                 if (DEBUG) {
-                    HyinitLogger.get().info(String.format("Generated synthetic class: %s (%d bytes)", name, generated.length));
+                    HyinitLogger.get()
+                            .info(String.format("Generated synthetic class: %s (%d bytes)", name, generated.length));
                 }
                 return generated;
             }
@@ -409,13 +408,21 @@ public class HyinitClassLoader extends SecureClassLoader {
     }
 
     private static final Set<String> TRANSFORM_EXCLUSIONS = Set.of(
-            "java.", "javax.", "jdk.", "sun.", "com.sun.",
+            "java.",
+            "javax.",
+            "jdk.",
+            "sun.",
+            "com.sun.",
             "org.objectweb.asm.",
             "org.spongepowered.asm.",
             "com.llamalad7.mixinextras.",
-            "cc.irori.hyinit.mixin.", "cc.irori.hyinit.shared.",
-            "org.slf4j.", "org.apache.logging.", "ch.qos.logback.",
-            "com.google.gson.", "com.google.flogger.",
+            "cc.irori.hyinit.mixin.",
+            "cc.irori.hyinit.shared.",
+            "org.slf4j.",
+            "org.apache.logging.",
+            "ch.qos.logback.",
+            "com.google.gson.",
+            "com.google.flogger.",
             "org.bouncycastle.",
             "com.hypixel.hytale.plugin.early.");
 
